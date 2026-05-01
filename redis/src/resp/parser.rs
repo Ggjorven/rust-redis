@@ -1,5 +1,3 @@
-use std::str::Chars;
-
 use super::definitions::*;
 
 //////////////////////////////////////////
@@ -98,14 +96,29 @@ pub fn parse_data_type(message: &str, index: &mut usize) -> Result<DataType, Par
 
             Ok(DataType::BulkString(Some(string.to_string())))
         },
-        // '*' => {
-        //     if message.len() == 1 { return Err(ParseError::InvalidSize("Creating an array with no explicit size is not allowed.".to_string())); }
-// 
-        //     let size: u64 = message.get(1..message.len()).unwrap().parse::<u64>().map_err(|_parse_error| { return ParseError::InvalidSize("Can't parse the size specified after the first byte.".to_string()); })?;
-// 
-        //     Ok(DataType::Array(size))
-        // },
-        '_' => { Ok(DataType::Null) },
+        '*' => {
+            *index += 1;
+
+            let Some((left, _right)) = message.get(*index..message.len()).unwrap_or("").split_once("\r\n") else {
+                return Err(ParseError::InvalidSyntax("Expected a size for the array ended with \\r\\n, but found None.".to_string()))
+            };
+
+            *index += left.len() + 2;
+
+            let array_size: u64 = left.parse::<u64>().map_err(|_parse_error| { return ParseError::InvalidSize("Cannot convert the array size to a u64.".to_string()); })?;
+            
+            let mut data_types: Vec<DataType> = Vec::with_capacity(array_size as usize);
+
+            let mut i = 0;
+            while i < array_size
+            {
+                data_types.push(parse_data_type(message, index)?);
+                i += 1;
+            }
+            
+            Ok(DataType::Array(data_types))
+        },
+        '_' => { *index += 1 + 2; Ok(DataType::Null) },
         _ => { Err(ParseError::NotImplemented) }
     }
 }

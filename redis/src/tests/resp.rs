@@ -36,15 +36,45 @@ fn resp_parse_bulk_string_type() -> Result<(), resp::ParseError> {
 
 #[test]
 fn resp_parse_array_type() -> Result<(), resp::ParseError> {
-    // assert_eq!(resp::parse_data_type("*2")?, resp::DataType::Array(2));
-    // assert_eq!(resp::parse_data_type("*266")?, resp::DataType::Array(266));
+    assert_eq!(resp::parse_data_type("*0\r\n", &mut 0)?, resp::DataType::Array(Vec::new()));
+    assert_eq!(resp::parse_data_type("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n", &mut 0)?, resp::DataType::Array(vec![
+        resp::DataType::BulkString(Some("hello".to_string())), 
+        resp::DataType::BulkString(Some("world".to_string()))
+    ]));
+    assert_eq!(resp::parse_data_type("*3\r\n:1\r\n:2\r\n:3\r\n", &mut 0)?, resp::DataType::Array(vec![
+        resp::DataType::Integer(1), 
+        resp::DataType::Integer(2), 
+        resp::DataType::Integer(3)
+    ]));
+
+    assert_eq!(resp::parse_data_type("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$5\r\nhello\r\n", &mut 0)?, resp::DataType::Array(vec![
+        resp::DataType::Integer(1), 
+        resp::DataType::Integer(2), 
+        resp::DataType::Integer(3),
+        resp::DataType::Integer(4),
+        resp::DataType::BulkString(Some("hello".to_string()))
+    ]));
+
+    assert_eq!(resp::parse_data_type("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Hello\r\n-World\r\n", &mut 0)?, resp::DataType::Array(vec![
+        resp::DataType::Array(vec![
+            resp::DataType::Integer(1), 
+            resp::DataType::Integer(2),
+            resp::DataType::Integer(3)
+        ]),
+        resp::DataType::Array(vec![
+            resp::DataType::SimpleString("Hello".to_string()), 
+            resp::DataType::SimpleError("World".to_string()), 
+        ]),
+    ]));
+
+    // TODO: More when new data types are added
 
     Ok(())
 }
 
 #[test]
 fn resp_parse_null_type() -> Result<(), resp::ParseError> {
-    // assert_eq!(resp::parse_data_type("_")?, resp::DataType::Null);
+    assert_eq!(resp::parse_data_type("_\r\n", &mut 0)?, resp::DataType::Null);
 
     Ok(())
 }
