@@ -14,24 +14,7 @@ pub enum ParseError
 //////////////////////////////////////////
 // Parser
 //////////////////////////////////////////
-pub fn parse_command(command_str: &str) -> Result<Command, ParseError>
-{
-    // Get data types
-    let mut types: Vec<DataType> = Vec::new();
-    
-    let mut i: usize = 0;
-    while i < command_str.len()
-    {
-        types.push(parse_data_type(command_str, &mut i)?);
-    }
-
-    // TODO: Checks
-
-    // TODO: Command
-
-    Err(ParseError::NotImplemented)
-}
-
+// Is recursive and can be an array of multiple other data types
 pub fn parse_data_type(message: &str, index: &mut usize) -> Result<DataType, ParseError>
 {
     match message.chars().nth(*index).unwrap()

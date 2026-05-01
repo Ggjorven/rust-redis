@@ -43,35 +43,3 @@ pub enum DataValue
 
     // TODO: ...
 }
-
-//////////////////////////////////////////
-// RESP Commands
-//////////////////////////////////////////
-#[derive(Debug, Clone)]
-pub struct GetCommand // GET
-{
-    key: String
-}
-
-#[derive(Debug, Clone)]
-pub struct SetCommand // SET
-{
-    key: String,
-    value: DataType
-}
-
-#[derive(Debug, Clone)]
-pub struct DelCommand // DEL
-{
-    key: String
-}
-
-#[derive(Debug, Clone)]
-pub enum Command 
-{
-    Get(GetCommand),
-    Set(SetCommand),
-    Del(DelCommand),
-    
-    Ping
-}

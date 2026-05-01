@@ -17,12 +17,18 @@ pub fn run_command(begin_type: DataType) -> Result<DataType, CommandError>
     {
         // Commands that don't need arguments
         DataType::SimpleString(command) => {
-            if command == "PING" { ping_command(None) }
-            else { Err(CommandError::NonRunnableCommand) }
+            match command
+            {
+                "PING" => { ping_command(None) },
+                _ => { Err(CommandError::NonRunnableCommand) }
+            }
         }
         DataType::BulkString(command) => {
-            if command == "PING" { ping_command(None) }
-            else { Err(CommandError::NonRunnableCommand) }
+            match command
+            {
+                "PING" => { ping_command(None) },
+                _ => { Err(CommandError::NonRunnableCommand) }
+            }
         }
 
         // Commands with arguments
