@@ -51,6 +51,35 @@ pub fn parse_data_type(message: &str) -> Result<DataType, ParseError>
     let mut chars = message.chars();
     match &chars.nth(0).unwrap() // First byte
     {
+        '+' => {
+            if message.len() == 1 { return Err(ParseError::InvalidSize("Cannot create a string with no content.".to_string())); }
+
+            let string: &str = message.get(1..message.len()).unwrap();
+
+            Ok(DataType::SimpleString(string.to_string()))
+        },
+        '-' => {
+            if message.len() == 1 { return Err(ParseError::InvalidSize("Cannot create an error with no content.".to_string())); }
+
+            let string: &str = message.get(1..message.len()).unwrap();
+
+            Ok(DataType::SimpleError(string.to_string()))
+        },
+        ':' => {
+            if message.len() == 1 { return Err(ParseError::InvalidSize("Integer doesn't have any content.".to_string())); }
+
+            let value: i64 = message.get(1..message.len()).unwrap().parse::<i64>().map_err(|_parse_error| { return ParseError::InvalidSize("Cannot convert the passed in integer to an i64.".to_string()); })?;
+
+            Ok(DataType::Integer(value))
+        },
+        '$' => {
+            if message.len() == 1 { return Err(ParseError::InvalidSize("Creating a bulk string with no explicit size is not allowed.".to_string())); }
+
+            let size: i64 = message.get(1..message.len()).unwrap().parse::<i64>().map_err(|_parse_error| { return ParseError::InvalidSize("Can't parse the size specified after the first byte.".to_string()); })?;
+
+            // TODO: ...
+            Ok(DataType::BulkString(size))
+        },
         '*' => {
             if message.len() == 1 { return Err(ParseError::InvalidSize("Creating an array with no explicit size is not allowed.".to_string())); }
 
