@@ -22,7 +22,7 @@ Ensure you have the following installed on your system:
 
 ```bash
 git clone https://github.com/ggjorven/rust-redis.git
-cd rust-redis
+cd rust-redis/redis
 cargo build --release
 ```
 
