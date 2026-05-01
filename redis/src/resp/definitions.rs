@@ -10,8 +10,8 @@ pub enum DataType
     SimpleString(String),       // +
     SimpleError(String),        // -
     Integer(i64),               // :
-    BulkString(i64),            // $ // NOTE: Can be null when it's -1
-    Array(u64),                 // *
+    BulkString(Option<String>), // $ // NOTE: Can be None (nil) when its -1
+    Array(Vec<DataType>),       // *
  
     // RESP3
     Null,                       // _

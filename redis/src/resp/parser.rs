@@ -1,3 +1,5 @@
+use std::str::Chars;
+
 use super::definitions::*;
 
 //////////////////////////////////////////
@@ -16,83 +18,77 @@ pub enum ParseError
 //////////////////////////////////////////
 pub fn parse_command(command_str: &str) -> Result<Command, ParseError>
 {
-    let mut messages = command_str.split("\r\n");
-
-    // First data type should be an array to begin the command
-    let Some(array_str) = messages.next() else {
-        return Err(ParseError::InvalidSyntax("Empty command passed in.".to_string()));
-    };
-    let DataType::Array(array_size) = parse_data_type(array_str)? else {
-        return Err(ParseError::InvalidSyntax("Expected the command to start with an array size type (*<ARRAY SIZE>).".to_string()));
-    };
-
-    // Check array size
-    if array_size == 0 {
-        return Err(ParseError::InvalidSize("Invalid array size passed in (0).".to_string()));
+    // Get data types
+    let mut types: Vec<DataType> = Vec::new();
+    
+    let mut i: usize = 0;
+    while i < command_str.len()
+    {
+        types.push(parse_data_type(command_str, &mut i)?);
     }
 
-    // Retrieve the rest of the arguments
-    let mut command_types: Vec<DataType> = Vec::with_capacity(array_size as usize);
-    while let Some(message) = messages.next() {
-        command_types.push(parse_data_type(message)?);
-    }
+    // TODO: Checks
 
-    // Convert to DataValue's
-
-    // Convert Command
+    // TODO: Command
 
     Err(ParseError::NotImplemented)
 }
 
-pub fn parse_data_type(message: &str) -> Result<DataType, ParseError>
+pub fn parse_data_type(message: &str, index: &mut usize) -> Result<DataType, ParseError>
 {
-    if message.len() == 0 { panic!("Internal logic error, received a message with length of 0."); }
-
-    let mut chars = message.chars();
-    match &chars.nth(0).unwrap() // First byte
+    match message.chars().nth(*index).unwrap()
     {
         '+' => {
-            if message.len() == 1 { return Err(ParseError::InvalidSize("Cannot create a string with no content.".to_string())); }
+            *index += 1;
 
-            let string: &str = message.get(1..message.len()).unwrap();
+            let Some((left, _right)) = message.get(*index..message.len()).unwrap_or("").split_once("\r\n") else {
+                return Err(ParseError::InvalidSyntax("Expected a simple string ended with \\r\\n, but found None.".to_string()))
+            };
 
-            Ok(DataType::SimpleString(string.to_string()))
+            *index += left.len();
+
+            Ok(DataType::SimpleString(left.to_string()))
         },
         '-' => {
-            if message.len() == 1 { return Err(ParseError::InvalidSize("Cannot create an error with no content.".to_string())); }
+            *index += 1;
 
-            let string: &str = message.get(1..message.len()).unwrap();
+            let Some((left, _right)) = message.get(*index..message.len()).unwrap_or("").split_once("\r\n") else {
+                return Err(ParseError::InvalidSyntax("Expected a simple error ended with \\r\\n, but found None.".to_string()))
+            };
 
-            Ok(DataType::SimpleError(string.to_string()))
+            *index += left.len();
+
+            Ok(DataType::SimpleError(left.to_string()))
         },
         ':' => {
-            if message.len() == 1 { return Err(ParseError::InvalidSize("Integer doesn't have any content.".to_string())); }
+            *index += 1;
 
-            let value: i64 = message.get(1..message.len()).unwrap().parse::<i64>().map_err(|_parse_error| { return ParseError::InvalidSize("Cannot convert the passed in integer to an i64.".to_string()); })?;
+            let Some((left, _right)) = message.get(*index..message.len()).unwrap_or("").split_once("\r\n") else {
+                return Err(ParseError::InvalidSyntax("Expected an integer ended with \\r\\n, but found None.".to_string()))
+            };
+
+            *index += left.len();
+
+            let value: i64 = left.parse::<i64>().map_err(|_parse_error| { return ParseError::InvalidSize("Cannot convert the passed in integer to an i64.".to_string()); })?;
 
             Ok(DataType::Integer(value))
         },
-        '$' => {
-            if message.len() == 1 { return Err(ParseError::InvalidSize("Creating a bulk string with no explicit size is not allowed.".to_string())); }
-
-            let size: i64 = message.get(1..message.len()).unwrap().parse::<i64>().map_err(|_parse_error| { return ParseError::InvalidSize("Can't parse the size specified after the first byte.".to_string()); })?;
-
-            // TODO: ...
-            Ok(DataType::BulkString(size))
-        },
-        '*' => {
-            if message.len() == 1 { return Err(ParseError::InvalidSize("Creating an array with no explicit size is not allowed.".to_string())); }
-
-            let size: u64 = message.get(1..message.len()).unwrap().parse::<u64>().map_err(|_parse_error| { return ParseError::InvalidSize("Can't parse the size specified after the first byte.".to_string()); })?;
-
-            Ok(DataType::Array(size))
-        },
+        // '$' => {
+        //     if message.len() == 1 { return Err(ParseError::InvalidSize("Creating a bulk string with no explicit size is not allowed.".to_string())); }
+// 
+        //     let size: i64 = message.get(1..message.len()).unwrap().parse::<i64>().map_err(|_parse_error| { return ParseError::InvalidSize("Can't parse the size specified after the first byte.".to_string()); })?;
+// 
+        //     // TODO: ...
+        //     Ok(DataType::BulkString(size))
+        // },
+        // '*' => {
+        //     if message.len() == 1 { return Err(ParseError::InvalidSize("Creating an array with no explicit size is not allowed.".to_string())); }
+// 
+        //     let size: u64 = message.get(1..message.len()).unwrap().parse::<u64>().map_err(|_parse_error| { return ParseError::InvalidSize("Can't parse the size specified after the first byte.".to_string()); })?;
+// 
+        //     Ok(DataType::Array(size))
+        // },
         '_' => { Ok(DataType::Null) },
         _ => { Err(ParseError::NotImplemented) }
     }
-}
-
-pub fn parse_data_value(data_types: &[&DataType]) -> Result<DataValue, ParseError>
-{
-    Err(ParseError::NotImplemented)
 }
