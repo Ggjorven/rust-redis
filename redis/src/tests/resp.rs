@@ -79,3 +79,25 @@ fn resp_parse_null_type() -> Result<(), resp::ParseError> {
     Ok(())
 }
 
+#[test]
+fn resp_parse_boolean_type() -> Result<(), resp::ParseError> {
+    assert_eq!(resp::parse_data_type("#t\r\n", &mut 0)?, resp::DataType::Boolean(true));
+    assert_eq!(resp::parse_data_type("#f\r\n", &mut 0)?, resp::DataType::Boolean(false));
+
+    Ok(())
+}
+
+#[test]
+fn resp_parse_double_type() -> Result<(), resp::ParseError> {
+    assert_eq!(resp::parse_data_type(",10\r\n", &mut 0)?, resp::DataType::Double(10.0));
+    assert_eq!(resp::parse_data_type(",1.11\r\n", &mut 0)?, resp::DataType::Double(1.11));
+    assert_eq!(resp::parse_data_type(",inf\r\n", &mut 0)?, resp::DataType::Double(f64::INFINITY));
+    assert_eq!(resp::parse_data_type(",-inf\r\n", &mut 0)?, resp::DataType::Double(f64::NEG_INFINITY));
+
+    let resp::DataType::Double(nan) = resp::parse_data_type(",nan\r\n", &mut 0)? else {
+        return Err(resp::ParseError::InvalidValue("Test case expected a double data type.".to_string()));
+    };
+    assert!(nan.is_nan());
+
+    Ok(())
+}
