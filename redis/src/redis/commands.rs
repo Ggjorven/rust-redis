@@ -10,6 +10,7 @@ pub enum CommandError
     InvalidArgumentCount(String),
     InvalidArgumentType(String),
     UnknownCommand(String),
+    DatabaseError(DatabaseError),
     NonRunnableCommand
 }
 
@@ -67,17 +68,26 @@ fn run_arg_command(db: &mut Database, command: &str, arguments: &[DataType]) -> 
     {
         "PING" => 
         { 
-            if arguments.len() != 1 { return Err(CommandError::InvalidArgumentCount(format!("Ping command expects 1 argument but got {}.", arguments.len()))); }
+            if arguments.len() != 1 { return Err(CommandError::InvalidArgumentCount(format!("PING command expects 1 argument but got {}.", arguments.len()))); }
             
             let arg0 = arguments.get(0).unwrap();
-            if let DataType::SimpleString(argument) = arg0 {
-                Ok(ping_command(Some(argument.as_str())))
-            }
-            else if let DataType::BulkString(Some(argument)) = arg0 {
+            if let DataType::SimpleString(argument) | DataType::BulkString(Some(argument)) = arg0 {
                 Ok(ping_command(Some(argument.as_str())))
             }
             else {
                 Err(CommandError::InvalidArgumentType(format!("PING expects a SimpleString or BulkString, got a {:?}.", arg0)))                
+            }
+        },
+        "SET" => 
+        { 
+            if arguments.len() != 2 { return Err(CommandError::InvalidArgumentCount(format!("SET command expects 2 argument but got {}.", arguments.len()))); }
+            
+            let arg0 = arguments.get(0).unwrap();
+            if let DataType::SimpleString(name) | DataType::BulkString(Some(name)) = arg0 {
+                set_command(db, name, arguments.get(1).unwrap())
+            }
+            else {
+                Err(CommandError::InvalidArgumentType(format!("SET expects a SimpleString or BulkString as the first argument, got a {:?}.", arg0)))                
             }
         },
         _ => { Err(CommandError::UnknownCommand(format!("Command \"{}\" does not exist.", command))) }
@@ -90,4 +100,16 @@ fn run_arg_command(db: &mut Database, command: &str, arguments: &[DataType]) -> 
 pub fn ping_command(message: Option<&str>) -> DataType
 {
     DataType::SimpleString(message.unwrap_or("OK").to_string())
+}
+
+pub fn set_command(db: &mut Database, name: &str, value: &DataType) -> Result<DataType, CommandError>
+{
+    let result = db.set(name, value);
+
+    if let Err(error) = result {
+        Err(CommandError::DatabaseError(error))
+    }
+    else {
+        Ok(DataType::SimpleString("OK".to_string()))
+    }
 }

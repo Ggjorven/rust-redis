@@ -1,18 +1,21 @@
-use super::super::resp;
-use super::super::redis;
+use super::super::resp::*;
+use super::super::redis::*;
 
 //////////////////////////////////////////
 // Database
 //////////////////////////////////////////
 #[test]
-fn database_queries() -> Result<(), redis::DatabaseError> {
-    let mut db = redis::Database::new();
+fn database_queries() -> Result<(), DatabaseError> {
+    let mut db = Database::new();
 
     let name = "foo";
-    let value = resp::DataType::SimpleString("bar".to_string());
+    let value = DataType::SimpleString("bar".to_string());
+    
     db.set(name, &value)?;
+    assert_eq!(db.get(name)?, DataType::SimpleString("bar".to_string()));
 
-    assert_eq!(db.get(name)?, resp::DataType::SimpleString("bar".to_string()));
+    db.del(name)?;
+    assert!(!db.exists(name));
 
     Ok(())
 }
@@ -21,26 +24,45 @@ fn database_queries() -> Result<(), redis::DatabaseError> {
 // Commands
 //////////////////////////////////////////
 #[test]
-fn ping_command() -> Result<(), redis::CommandError> {
-    let mut db = redis::Database::new();
+fn ping_command() -> Result<(), CommandError> {
+    let mut db = Database::new();
 
-    assert_eq!(redis::run_command(&mut db, resp::DataType::SimpleString("PING".to_string()))?, resp::DataType::SimpleString("OK".to_string()));
-    assert_eq!(redis::run_command(&mut db, resp::DataType::BulkString(Some("PING".to_string())))?, resp::DataType::SimpleString("OK".to_string()));
+    assert_eq!(run_command(&mut db, DataType::SimpleString("PING".to_string()))?, DataType::SimpleString("OK".to_string()));
+    assert_eq!(run_command(&mut db, DataType::BulkString(Some("PING".to_string())))?, DataType::SimpleString("OK".to_string()));
 
-    assert_eq!(redis::run_command(&mut db, resp::DataType::Array(vec![
-        resp::DataType::SimpleString("PING".to_string()),
-        resp::DataType::SimpleString("HELLO WORLD".to_string()),
-    ]))?, resp::DataType::SimpleString("HELLO WORLD".to_string()));
+    assert_eq!(run_command(&mut db, DataType::Array(vec![
+        DataType::SimpleString("PING".to_string()),
+        DataType::SimpleString("HELLO WORLD".to_string()),
+    ]))?, DataType::SimpleString("HELLO WORLD".to_string()));
 
-    assert_eq!(redis::run_command(&mut db, resp::DataType::Array(vec![
-        resp::DataType::SimpleString("PING".to_string()),
-        resp::DataType::BulkString(Some("SECOND TIME USING RUST".to_string())),
-    ]))?, resp::DataType::SimpleString("SECOND TIME USING RUST".to_string()));
+    assert_eq!(run_command(&mut db, DataType::Array(vec![
+        DataType::SimpleString("PING".to_string()),
+        DataType::BulkString(Some("SECOND TIME USING RUST".to_string())),
+    ]))?, DataType::SimpleString("SECOND TIME USING RUST".to_string()));
 
-    assert_eq!(redis::run_command(&mut db, resp::DataType::Array(vec![
-        resp::DataType::BulkString(Some("PING".to_string())),
-        resp::DataType::BulkString(Some("HI".to_string())),
-    ]))?, resp::DataType::SimpleString("HI".to_string()));
+    assert_eq!(run_command(&mut db, DataType::Array(vec![
+        DataType::BulkString(Some("PING".to_string())),
+        DataType::BulkString(Some("HI".to_string())),
+    ]))?, DataType::SimpleString("HI".to_string()));
+
+    Ok(())
+}
+
+#[test]
+fn set_command() -> Result<(), CommandError> {
+    let mut db = Database::new();
+
+    assert_eq!(run_command(&mut db, DataType::Array(vec![
+        DataType::SimpleString("SET".to_string()),
+        DataType::SimpleString("foo".to_string()),
+        DataType::SimpleString("bar".to_string())
+    ]))?, DataType::SimpleString("OK".to_string()));
+
+    assert_eq!(run_command(&mut db, DataType::Array(vec![
+        DataType::SimpleString("SET".to_string()),
+        DataType::SimpleString("bar".to_string()),
+        DataType::Double(1.11)
+    ]))?, DataType::SimpleString("OK".to_string()));
 
     Ok(())
 }

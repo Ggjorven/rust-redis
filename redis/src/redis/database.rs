@@ -8,7 +8,7 @@ use super::super::resp::*;
 #[derive(Debug, Clone, PartialEq)]
 pub enum DatabaseError
 {
-    DoesntExist(String),
+    KeyDoesntExist(String),
     NotImplemented
 }
 
@@ -51,7 +51,29 @@ impl Database
         match entry
         {
             Some(data_type) => { Ok(data_type.clone()) }
-            None => { Err(DatabaseError::DoesntExist(format!("Entry by name: {} doesn't exist.", name))) }
+            None => { Err(DatabaseError::KeyDoesntExist(format!("Entry by name: {} doesn't exist.", name))) }
         }
+    }
+
+    pub fn del(&mut self, name: &str) -> Result<(), DatabaseError>
+    {
+        let inner = Arc::clone(&self.inner);
+        let mut db = inner.lock().unwrap();
+
+        let entry = db.remove(name);
+
+        match entry
+        {
+            Some(_data_type) => { Ok(()) }
+            None => { Err(DatabaseError::KeyDoesntExist(format!("Entry by name: {} doesn't exist.", name))) }
+        }
+    }
+
+    pub fn exists(&self, name: &str) -> bool
+    {
+        let inner = Arc::clone(&self.inner);
+        let db = inner.lock().unwrap();
+
+        db.contains_key(name)
     }
 }

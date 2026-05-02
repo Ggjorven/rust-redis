@@ -1,72 +1,72 @@
-use super::super::resp;
+use super::super::resp::*;
 
 //////////////////////////////////////////
 // Parse tests
 //////////////////////////////////////////
 #[test]
-fn parse_simple_string_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type("+test\r\n", &mut 0)?, resp::DataType::SimpleString("test".to_string()));
-    assert_eq!(resp::parse_data_type("+test message hihi\r\n", &mut 0)?, resp::DataType::SimpleString("test message hihi".to_string()));
+fn parse_simple_string_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type("+test\r\n", &mut 0)?, DataType::SimpleString("test".to_string()));
+    assert_eq!(parse_data_type("+test message hihi\r\n", &mut 0)?, DataType::SimpleString("test message hihi".to_string()));
 
     Ok(())
 }
 
 #[test]
-fn parse_simple_error_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type("-test\r\n", &mut 0)?, resp::DataType::SimpleError("test".to_string()));
-    assert_eq!(resp::parse_data_type("-test message hihi\r\n", &mut 0)?, resp::DataType::SimpleError("test message hihi".to_string()));
+fn parse_simple_error_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type("-test\r\n", &mut 0)?, DataType::SimpleError("test".to_string()));
+    assert_eq!(parse_data_type("-test message hihi\r\n", &mut 0)?, DataType::SimpleError("test message hihi".to_string()));
 
     Ok(())
 }
 
 #[test]
-fn parse_integer_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type(":-1\r\n", &mut 0)?, resp::DataType::Integer(-1));
-    assert_eq!(resp::parse_data_type(":0\r\n", &mut 0)?, resp::DataType::Integer(0));
-    assert_eq!(resp::parse_data_type(":100\r\n", &mut 0)?, resp::DataType::Integer(100));
+fn parse_integer_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type(":-1\r\n", &mut 0)?, DataType::Integer(-1));
+    assert_eq!(parse_data_type(":0\r\n", &mut 0)?, DataType::Integer(0));
+    assert_eq!(parse_data_type(":100\r\n", &mut 0)?, DataType::Integer(100));
 
     Ok(())
 }
 
 #[test]
-fn parse_bulk_string_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type("$-1\r\n", &mut 0)?, resp::DataType::BulkString(None));
-    assert_eq!(resp::parse_data_type("$5\r\nhello\r\n", &mut 0)?, resp::DataType::BulkString(Some("hello".to_string())));
-    assert_eq!(resp::parse_data_type("$10\r\nhello\r\nyou\r\n", &mut 0)?, resp::DataType::BulkString(Some("hello\r\nyou".to_string())));
+fn parse_bulk_string_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type("$-1\r\n", &mut 0)?, DataType::BulkString(None));
+    assert_eq!(parse_data_type("$5\r\nhello\r\n", &mut 0)?, DataType::BulkString(Some("hello".to_string())));
+    assert_eq!(parse_data_type("$10\r\nhello\r\nyou\r\n", &mut 0)?, DataType::BulkString(Some("hello\r\nyou".to_string())));
 
     Ok(())
 }
 
 #[test]
-fn parse_array_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type("*0\r\n", &mut 0)?, resp::DataType::Array(Vec::new()));
-    assert_eq!(resp::parse_data_type("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n", &mut 0)?, resp::DataType::Array(vec![
-        resp::DataType::BulkString(Some("hello".to_string())), 
-        resp::DataType::BulkString(Some("world".to_string()))
+fn parse_array_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type("*0\r\n", &mut 0)?, DataType::Array(Vec::new()));
+    assert_eq!(parse_data_type("*2\r\n$5\r\nhello\r\n$5\r\nworld\r\n", &mut 0)?, DataType::Array(vec![
+        DataType::BulkString(Some("hello".to_string())), 
+        DataType::BulkString(Some("world".to_string()))
     ]));
-    assert_eq!(resp::parse_data_type("*3\r\n:1\r\n:2\r\n:3\r\n", &mut 0)?, resp::DataType::Array(vec![
-        resp::DataType::Integer(1), 
-        resp::DataType::Integer(2), 
-        resp::DataType::Integer(3)
-    ]));
-
-    assert_eq!(resp::parse_data_type("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$5\r\nhello\r\n", &mut 0)?, resp::DataType::Array(vec![
-        resp::DataType::Integer(1), 
-        resp::DataType::Integer(2), 
-        resp::DataType::Integer(3),
-        resp::DataType::Integer(4),
-        resp::DataType::BulkString(Some("hello".to_string()))
+    assert_eq!(parse_data_type("*3\r\n:1\r\n:2\r\n:3\r\n", &mut 0)?, DataType::Array(vec![
+        DataType::Integer(1), 
+        DataType::Integer(2), 
+        DataType::Integer(3)
     ]));
 
-    assert_eq!(resp::parse_data_type("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Hello\r\n-World\r\n", &mut 0)?, resp::DataType::Array(vec![
-        resp::DataType::Array(vec![
-            resp::DataType::Integer(1), 
-            resp::DataType::Integer(2),
-            resp::DataType::Integer(3)
+    assert_eq!(parse_data_type("*5\r\n:1\r\n:2\r\n:3\r\n:4\r\n$5\r\nhello\r\n", &mut 0)?, DataType::Array(vec![
+        DataType::Integer(1), 
+        DataType::Integer(2), 
+        DataType::Integer(3),
+        DataType::Integer(4),
+        DataType::BulkString(Some("hello".to_string()))
+    ]));
+
+    assert_eq!(parse_data_type("*2\r\n*3\r\n:1\r\n:2\r\n:3\r\n*2\r\n+Hello\r\n-World\r\n", &mut 0)?, DataType::Array(vec![
+        DataType::Array(vec![
+            DataType::Integer(1), 
+            DataType::Integer(2),
+            DataType::Integer(3)
         ]),
-        resp::DataType::Array(vec![
-            resp::DataType::SimpleString("Hello".to_string()), 
-            resp::DataType::SimpleError("World".to_string()), 
+        DataType::Array(vec![
+            DataType::SimpleString("Hello".to_string()), 
+            DataType::SimpleError("World".to_string()), 
         ]),
     ]));
 
@@ -76,29 +76,29 @@ fn parse_array_type() -> Result<(), resp::ParseError> {
 }
 
 #[test]
-fn parse_null_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type("_\r\n", &mut 0)?, resp::DataType::Null);
+fn parse_null_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type("_\r\n", &mut 0)?, DataType::Null);
 
     Ok(())
 }
 
 #[test]
-fn parse_boolean_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type("#t\r\n", &mut 0)?, resp::DataType::Boolean(true));
-    assert_eq!(resp::parse_data_type("#f\r\n", &mut 0)?, resp::DataType::Boolean(false));
+fn parse_boolean_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type("#t\r\n", &mut 0)?, DataType::Boolean(true));
+    assert_eq!(parse_data_type("#f\r\n", &mut 0)?, DataType::Boolean(false));
 
     Ok(())
 }
 
 #[test]
-fn parse_double_type() -> Result<(), resp::ParseError> {
-    assert_eq!(resp::parse_data_type(",10\r\n", &mut 0)?, resp::DataType::Double(10.0));
-    assert_eq!(resp::parse_data_type(",1.11\r\n", &mut 0)?, resp::DataType::Double(1.11));
-    assert_eq!(resp::parse_data_type(",inf\r\n", &mut 0)?, resp::DataType::Double(f64::INFINITY));
-    assert_eq!(resp::parse_data_type(",-inf\r\n", &mut 0)?, resp::DataType::Double(f64::NEG_INFINITY));
+fn parse_double_type() -> Result<(), ParseError> {
+    assert_eq!(parse_data_type(",10\r\n", &mut 0)?, DataType::Double(10.0));
+    assert_eq!(parse_data_type(",1.11\r\n", &mut 0)?, DataType::Double(1.11));
+    assert_eq!(parse_data_type(",inf\r\n", &mut 0)?, DataType::Double(f64::INFINITY));
+    assert_eq!(parse_data_type(",-inf\r\n", &mut 0)?, DataType::Double(f64::NEG_INFINITY));
 
-    let resp::DataType::Double(nan) = resp::parse_data_type(",nan\r\n", &mut 0)? else {
-        return Err(resp::ParseError::InvalidValue("Test case expected a double data type.".to_string()));
+    let DataType::Double(nan) = parse_data_type(",nan\r\n", &mut 0)? else {
+        return Err(ParseError::InvalidValue("Test case expected a double data type.".to_string()));
     };
     assert!(nan.is_nan());
 
