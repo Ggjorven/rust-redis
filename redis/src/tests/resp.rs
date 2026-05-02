@@ -105,6 +105,8 @@ fn parse_double_type() -> Result<(), ParseError> {
     Ok(())
 }
 
+// TODO: More tests when more data types are added
+
 //////////////////////////////////////////
 // Marshall tests
 //////////////////////////////////////////

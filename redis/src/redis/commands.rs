@@ -90,6 +90,30 @@ fn run_arg_command(db: &mut Database, command: &str, arguments: &[DataType]) -> 
                 Err(CommandError::InvalidArgumentType(format!("SET expects a SimpleString or BulkString as the first argument, got a {:?}.", arg0)))                
             }
         },
+        "GET" => 
+        { 
+            if arguments.len() != 1 { return Err(CommandError::InvalidArgumentCount(format!("GET command expects 1 argument but got {}.", arguments.len()))); }
+            
+            let arg0 = arguments.get(0).unwrap();
+            if let DataType::SimpleString(name) | DataType::BulkString(Some(name)) = arg0 {
+                get_command(db, name)
+            }
+            else {
+                Err(CommandError::InvalidArgumentType(format!("GET expects a SimpleString or BulkString as the first argument, got a {:?}.", arg0)))                
+            }
+        },
+        "DEL" => 
+        { 
+            if arguments.len() != 1 { return Err(CommandError::InvalidArgumentCount(format!("DEL command expects 1 argument but got {}.", arguments.len()))); }
+            
+            let arg0 = arguments.get(0).unwrap();
+            if let DataType::SimpleString(name) | DataType::BulkString(Some(name)) = arg0 {
+                del_command(db, name)
+            }
+            else {
+                Err(CommandError::InvalidArgumentType(format!("DEL expects a SimpleString or BulkString as the first argument, got a {:?}.", arg0)))                
+            }
+        },
         _ => { Err(CommandError::UnknownCommand(format!("Command \"{}\" does not exist.", command))) }
     }
 }
@@ -106,10 +130,31 @@ pub fn set_command(db: &mut Database, name: &str, value: &DataType) -> Result<Da
 {
     let result = db.set(name, value);
 
-    if let Err(error) = result {
-        Err(CommandError::DatabaseError(error))
+    match result 
+    {
+        Ok(_) => { Ok(DataType::SimpleString("OK".to_string())) }
+        Err(error) => { Err(CommandError::DatabaseError(error)) }
     }
-    else {
-        Ok(DataType::SimpleString("OK".to_string()))
+}
+
+pub fn get_command(db: &Database, name: &str) -> Result<DataType, CommandError>
+{
+    let result = db.get(name);
+
+    match result 
+    {
+        Ok(value) => { Ok(value) }
+        Err(error) => { Err(CommandError::DatabaseError(error)) }
+    }
+}
+
+pub fn del_command(db: &mut Database, name: &str) -> Result<DataType, CommandError>
+{
+    let result = db.del(name);
+
+    match result 
+    {
+        Ok(_) => { Ok(DataType::SimpleString("OK".to_string())) }
+        Err(error) => { Err(CommandError::DatabaseError(error)) }
     }
 }
