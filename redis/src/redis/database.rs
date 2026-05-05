@@ -15,6 +15,7 @@ pub enum DatabaseError
 //////////////////////////////////////////
 // Database
 //////////////////////////////////////////
+#[derive(Debug)] // NOTE: No clone, because I don't know how that would work with Arc
 pub struct Database 
 {
     inner: Arc<Mutex<HashMap<String, DataType>>>,
@@ -28,6 +29,13 @@ impl Database
             inner: Arc::new(Mutex::new(HashMap::new())) 
         }
     }
+
+    pub fn copy(&mut self) -> Self 
+    {
+        Database { 
+            inner: Arc::clone(&self.inner) 
+        }
+    } 
 
     pub fn set(&mut self, name: &str, value: &DataType) -> Result<(), DatabaseError>
     {

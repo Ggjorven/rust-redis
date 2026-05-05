@@ -1,8 +1,12 @@
 mod resp;
 mod redis;
+mod server;
 
-fn main() {
-    // resp::parse_command("*2\r\n+AAAAAAA\r\n+BBBBBBBBBBB\r\n");
+#[tokio::main]
+async fn main() {
+    let mut server = server::Server::new().await;
+    server.listen(Some(6379)).await;
+    server.run_loop().await;
 }
 
 // For tests
